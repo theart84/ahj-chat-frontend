@@ -47,6 +47,10 @@ export default class ModalWithForm {
                   class: ['modal__form'],
                   name: 'modal-form',
                 },
+                listener: {
+                  type: 'submit',
+                  cb: (event) => this.submit(event),
+                },
                 content: [
                   {
                     type: 'div',
@@ -67,8 +71,15 @@ export default class ModalWithForm {
                         attr: {
                           class: ['form__input'],
                           id: 'username-field',
-                          name: 'username',
+                          name: 'name',
                           placeholder: 'Please enter your name...',
+                        },
+                        content: '',
+                      },
+                      {
+                        type: 'div',
+                        attr: {
+                          class: ['form__hint', 'hidden'],
                         },
                         content: '',
                       },
@@ -101,7 +112,7 @@ export default class ModalWithForm {
                   },
                   listener: {
                     type: 'click',
-                    cb: () => this.submit(),
+                    cb: (event) => this.submit(event),
                   },
                   content: 'Ok',
                 },
@@ -115,16 +126,21 @@ export default class ModalWithForm {
 
   bindToDOM() {
     this.container.appendChild(this.render());
+    this.modalElement = this.container.querySelector('.modal__form');
+    this.formElement = this.modalElement.querySelector('form');
   }
 
-  submit() {
+  submit(event) {
+    event.preventDefault();
     const { formElement } = this;
+    if (formElement.elements.name.value === '') {
+      return;
+    }
     const data = {
-      username: formElement.elements.username.value,
+      name: formElement.elements.name.value,
     };
     this.modalElement.querySelector('.modal__header').textContent = '';
-    this.close();
-    eventBus.emit('submit', data);
+    eventBus.emit('connect-chat', data);
   }
 
   close() {
@@ -133,19 +149,24 @@ export default class ModalWithForm {
   }
 
   showModal() {
-      this.modalElement.classList.add('active');
+    this.hideHint();
+    this.modalElement.classList.add('active');
   }
 
-  get modalElement() {
-    return this.container.querySelector('.modal__form');
+  showHint(message) {
+    const hintElement = this.formElement.querySelector('.form__hint');
+    hintElement.textContent = message;
+    hintElement.classList.remove('hidden');
   }
 
-  get formElement() {
-    return this.modalElement.querySelector('form');
+  hideHint() {
+    const hintElement = this.formElement.querySelector('.form__hint');
+    hintElement.textContent = '';
+    hintElement.classList.add('hidden');
   }
 
   clearForm() {
     const { formElement } = this;
-    formElement.elements.username.value = '';
+    formElement.elements.name.value = '';
   }
 }

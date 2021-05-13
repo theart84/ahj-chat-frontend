@@ -9,6 +9,10 @@ h1 {
   padding: 0;
 }
 
+.hidden {
+  display: none;
+}
+
 #root {
   font-family: 'Roboto', sans-serif;
   color: #100c08;
@@ -109,4 +113,29 @@ h1 {
   border-radius: 5px;
   margin-bottom: 10px;
   background-color: #e0e6da;
+}
+
+.message__container {
+  width: 50%;
+  margin-bottom: 10px;
+
+}
+
+.message__header {
+  font-size: 14px;
+}
+
+.message__container-yourself {
+  margin-left: auto;
+  text-align: right;
+}
+
+.message__container-yourself .message__header {
+  color: #20b1df;
+}
+
+
+.message__container-interlocutor {
+  margin-right: auto;
+  text-align: left;
 }

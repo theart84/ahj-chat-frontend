@@ -17,7 +17,11 @@ class TemplateEngine {
       });
     }
     if (data.listener) {
-      template.addEventListener(data.listener.type, data.listener.cb);
+      if (Array.isArray(data.listener)) {
+        data.listener.forEach((listener) => template.addEventListener(listener.type, listener.cb));
+      } else {
+        template.addEventListener(data.listener.type, data.listener.cb);
+      }
     }
     if (typeof data.content === 'string') {
       if (data.content === '') {

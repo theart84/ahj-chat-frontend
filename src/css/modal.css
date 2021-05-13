@@ -55,30 +55,16 @@
   border-radius: 5px;
 }
 
-.form__textarea {
-  display: block;
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  min-width: 100%;
-  min-height: 75px;
-  max-height: 250px;
-  padding: 10px;
-  margin-top: 5px;
-  border: 1px  solid #c9cacc;
-  border-radius: 5px;
-}
-
 .form__input:focus {
   outline: none;
   border: 1px solid #20b1df;
 }
 
-.form__textarea:focus {
-  outline: none;
-  border: 1px solid #20b1df;
+.form__hint {
+  font-size: 14px;
+  color: red;
+  text-align: center;
+  margin-top: 5px;
 }
 
 .modal__footer {

@@ -3,6 +3,12 @@ class EventBus {
     this.handlers = [];
   }
 
+  /**
+   *
+   * @param {string} event
+   * @param {function} handler
+   * @param {object} context
+   */
   subscribe(event, handler, context) {
     if (typeof context === 'undefined') {
       context = handler;

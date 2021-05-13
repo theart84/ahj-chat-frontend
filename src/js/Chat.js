@@ -1,10 +1,13 @@
 import templateEngine from './TemplateEngine';
 import ModalWithForm from './ModalWithForm';
 import eventBus from './EventBus';
+import ChatAPI from './api/ChatAPI';
 
 export default class Chat {
   constructor(container) {
     this.container = container;
+    this.api = new ChatAPI();
+    this.websocket = null;
   }
 
   init() {
@@ -12,6 +15,7 @@ export default class Chat {
     this.registerEvents();
     this.modalWithForm = new ModalWithForm(this.container);
     this.modalWithForm.bindToDOM();
+    this.subscribeOnEvents();
   }
 
   bindToDOM() {
@@ -67,27 +71,21 @@ export default class Chat {
                     class: ['chat__messages-input'],
                   },
                   content: {
-                    type: 'form',
+                    type: 'div',
                     attr: {
-                      class: ['form'],
-                      name: 'form',
+                      class: ['form__group'],
                     },
                     content: {
-                      type: 'div',
+                      type: 'input',
                       attr: {
-                        class: ['form__group'],
+                        class: ['form__input'],
+                        type: 'text',
+                        id: 'message-field',
+                        name: 'message',
+                        placeholder: 'Please enter your message...',
+                        disabled: true,
                       },
-                      content: {
-                        type: 'input',
-                        attr: {
-                          class: ['form__input'],
-                          id: 'username-field',
-                          name: 'username',
-                          placeholder: 'Please enter your message...',
-                          disabled: true
-                        },
-                        content: '',
-                      },
+                      content: '',
                     },
                   },
                 },
@@ -98,32 +96,114 @@ export default class Chat {
               attr: {
                 class: ['chat__userlist'],
               },
-              content: [
-                {
-                  type: 'div',
-                  attr: {
-                    class: ['chat__user'],
-                  },
-                  content: 'Kate',
-                },
-                {
-                  type: 'div',
-                  attr: {
-                    class: ['chat__user'],
-                  },
-                  content: 'Art',
-                }
-              ],
+              content: '',
             },
           ],
         },
       ],
     });
     this.container.appendChild(template);
+    this.userListContainer = this.container.querySelector('.chat__userlist');
+    this.inputElement = this.container.querySelector('.form__input');
+    this.connectButton = this.container.querySelector('.chat__connect');
+    this.messageContainer = this.container.querySelector('.chat__messages-container');
   }
 
   registerEvents() {
-    const connectButtonElement = this.container.querySelector('.chat__connect');
-    connectButtonElement.addEventListener('click', () => this.modalWithForm.showModal());
+    this.connectButton.addEventListener('click', () => this.modalWithForm.showModal());
+    this.inputElement.addEventListener('keydown', (event) => {
+      if (event.keyCode === 13) {
+        this.sendMessage();
+      }
+    });
+  }
+
+  subscribeOnEvents() {
+    eventBus.subscribe('connect-chat', this.onEnterChatHandler, this);
+  }
+
+  async onEnterChatHandler(newUser) {
+    const response = await this.api.create(newUser);
+    if (response.status === 'ok') {
+      this.modalWithForm.hideHint();
+      this.modalWithForm.close();
+      this.connectButton.classList.add('hidden');
+      this.user = response.user;
+      this.inputElement.disabled = false;
+      this.websocket = new WebSocket('ws://astro-messenger.herokuapp.com/chat');
+      this.websocket.addEventListener('message', (event) => this.renderMessage(event));
+      window.addEventListener('beforeunload', () =>
+        this.websocket.send(
+          JSON.stringify({
+            type: 'exit',
+            user: this.user,
+          })
+        )
+      );
+    } else {
+      this.modalWithForm.showHint(response.message);
+    }
+  }
+
+  sendMessage() {
+    const { value } = this.inputElement;
+    this.websocket.send(JSON.stringify({ type: 'send', message: value, user: this.user }));
+    this.inputElement.value = '';
+  }
+
+  renderMessage(event) {
+    const receivedData = JSON.parse(event.data);
+    if (Array.isArray(receivedData)) {
+      this.userListContainer.textContent = '';
+      receivedData.forEach((user) => {
+        const template = templateEngine.generate({
+          type: 'div',
+          attr: {
+            class: ['chat__user'],
+            'data-user-id': user.id,
+          },
+          content: user.name === this.user.name ? 'You' : user.name,
+        });
+        this.userListContainer.appendChild(template);
+      });
+      return;
+    }
+    const sourceDate = new Date();
+    const date = `${sourceDate
+      .toLocaleTimeString()
+      .slice(0, 5)} ${sourceDate.toLocaleDateString()} `;
+    const template = templateEngine.generate({
+      type: 'div',
+      attr: {
+        class: [
+          'message__container',
+          `${
+            receivedData.user.name === this.user.name
+              ? 'message__container-yourself'
+              : 'message__container-interlocutor'
+          }`,
+        ],
+      },
+      content: [
+        {
+          type: 'div',
+          attr: {
+            class: ['message__header'],
+          },
+          content: `${
+            receivedData.user.name === this.user.name ? 'You' : receivedData.user.name
+          }, ${date}`,
+        },
+        {
+          type: 'div',
+          attr: {
+            class: ['message__body'],
+          },
+          content: receivedData.message,
+        },
+      ],
+    });
+    this.messageContainer.appendChild(template);
+    this.messageContainer.lastElementChild.scrollIntoView();
   }
 }
