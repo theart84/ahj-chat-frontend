@@ -130,7 +130,7 @@ export default class Chat {
       this.connectButton.classList.add('hidden');
       this.user = response.user;
       this.inputElement.disabled = false;
-      this.websocket = new WebSocket('ws://astro-messenger.herokuapp.com/chat');
+      this.websocket = new WebSocket('wss://astro-messenger.herokuapp.com/chat');
       this.websocket.addEventListener('message', (event) => this.renderMessage(event));
       window.addEventListener('beforeunload', () =>
         this.websocket.send(
